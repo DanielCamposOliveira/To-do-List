@@ -1,0 +1,68 @@
+﻿@model List<Front_End.Models.Login.ResultModel>
+
+@{
+    Layout = null; // Desativa o layout padrão (_Layout.cshtml) para carregar apenas este estilo limpo
+}
+
+
+
+<link rel="stylesheet" href="~/css/Login.css" asp-append-version="true" />
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema</title>
+
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo">🔐</div>
+        <h1>Bem-vindo</h1>
+        <p class="subtitulo">Entre com suas credenciais para acessar o sistema.</p>
+
+        <!-- Exibe erro se as credenciais estiverem incorretas -->
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="error-msg">@ViewBag.ErrorMessage</div>
+        }
+
+        <!-- Formulário apontando para a Action Login do AuthController -->
+        <form asp-controller="Login" asp-action="Index" method="post">
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email"
+                       id="email"
+                       name="email"                       
+                       placeholder="Digite seu e-mail"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <input type="password"
+                       id="senha"
+                       name="password"                       
+                       placeholder="Digite sua senha"
+                       required>
+            </div>
+
+            <div class="options">
+
+                <a href="#">Esqueci minha senha</a>
+            </div>
+
+            <button type="submit">Entrar</button>
+
+
+        </form>
+
+        <div class="footer">
+            Não possui uma conta? <a href="#">Cadastre-se</a>
+        </div>
+    </div>
+
+</body>
+</html>

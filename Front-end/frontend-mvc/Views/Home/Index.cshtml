@@ -1,0 +1,321 @@
+﻿@using static Front_End.DTOs.TodoDtos
+@model PagedTodoResponse
+
+@{
+    Layout = null; // Carrega apenas o estilo limpo da sua tela
+}
+
+<!-- CSS -->
+<link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista de Tarefas</title>
+
+
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Lista de Tarefas</h1>
+        <!-- Agrupando os botões no topo direito -->
+        <div class="header-botoes">
+                  
+            <!-- Botão de criar nova tarefa -->
+            <button class="novo" onclick="abrirModal()">
+                Nova Tarefa
+            </button>
+			
+            <!-- Botão de logout -->
+            <form asp-controller="Home" asp-action="Logout" method="get" style="display:inline;">
+                <button type="submit" class="btn-logoff">
+                    Sair
+                </button>
+            </form>
+
+        </div>
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Data != null && Model.Data.Any())
+            {
+                @foreach (var tarefa in Model.Data)
+                {
+                    <tr>
+                        <td>@tarefa.Id</td>
+                        <td>@tarefa.Title</td>
+                        <td>@(tarefa.Description ?? "")</td>
+                        <td>
+                            @if (tarefa.Completed == true)
+                            {
+                                <span class="status concluida">Concluída</span>
+                            }
+                            else
+                            {
+                                <span class="status pendente">Pendente</span>
+                            }
+                        </td>
+                        <td class="acoes">
+                            <button class="editar" onclick="editar(@tarefa.Id)">
+                                Editar
+                            </button>
+                            <button class="excluir" onclick="excluir(@tarefa.Id)">
+                                Excluir
+                            </button>
+                                @if (!tarefa.Completed)
+                                {
+                                    <button class="concluir pendente" onclick="UpdateComplete(@tarefa.Id)">
+                                        Check-in
+                                    </button>
+                                }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #666; padding: 30px;">
+                        Nenhuma tarefa encontrada.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Componente de Paginação Dinâmica com os dados da API -->
+    <div class="paginacao">
+        <a href="?page=@(Model.Page - 1)&limit=@Model.Limit" 
+           class="btn-pag @(Model.Page <= 1 ? "disabled" : "")">
+           Anterior
+        </a>
+        <span style="align-self: center; color: #444; font-weight: 600;">
+            Página @Model.Page de @(Math.Ceiling((double)Model.Total / Model.Limit))
+        </span>
+        <a href="?page=@(Model.Page + 1)&limit=@Model.Limit" 
+           class="btn-pag @(Model.Page * Model.Limit >= Model.Total ? "disabled" : "")">
+           Próxima
+        </a>
+    </div>
+
+</div>
+
+    <!-- ESTRUTURA DO POP-UP (MODAL) -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="card">
+            <button class="btn-fechar" onclick="fecharModal()">&times;</button>
+        
+            <h1 id="modalTitle">Tarefa</h1>
+            <p id="modalDescription">Preencha os dados para cadastrar uma tarefa.</p>
+                  
+            <form id="taskForm">
+                <!-- CAMPO OCULTO ADICIONADO AQUI -->
+                <input type="hidden" id="todoId" />
+
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="title" maxlength="150" placeholder="Digite o título da tarefa" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="description" placeholder="Descreva a tarefa..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-salvar" id="btnSalvar">Salvar Tarefa</button>
+            </form>
+
+            <div id="mensagem"></div>
+        </div>
+    </div>
+
+<script>
+
+// --- FUNÇÕES DO MODAL ---
+const modal = document.getElementById("modalOverlay");
+const form = document.getElementById("taskForm");
+const mensagem = document.getElementById("mensagem");
+
+// Elementos visuais para mudar os textos entre Criar/Editar (Opcional, mas melhora a experiência)
+const modalTitle = document.getElementById("modalTitle");
+const modalDesc = document.getElementById("modalDescription");
+const btnSalvar = document.getElementById("btnSalvar");
+
+function abrirModal() {
+    // Garante que está limpo para um novo cadastro
+    document.getElementById("todoId").value = "";
+    modalTitle.innerText = "Nova Tarefa";
+    modalDesc.innerText = "Preencha os dados para cadastrar uma tarefa.";
+    btnSalvar.innerText = "Salvar Tarefa";
+    
+    modal.classList.add("active");
+    mensagem.innerHTML = "";
+}
+
+function fecharModal() {
+    modal.classList.remove("active");
+    form.reset();
+    document.getElementById("todoId").value = ""; // Limpa o ID ao fechar
+}
+
+// NOVA FUNÇÃO DE EDITAR
+function editar(id) {
+    // 1. Muda os textos do modal para o modo de Edição
+    modalTitle.innerText = "Editar Tarefa";
+    modalDesc.innerText = "Altere os dados necessários da sua tarefa.";
+    btnSalvar.innerText = "Atualizar Tarefa";
+    mensagem.innerHTML = "";
+
+    // 2. Seta o ID no campo oculto (essencial para o seu form submit disparar o PUT)
+    document.getElementById("todoId").value = id;
+
+    // 3. Captura os valores diretamente da linha correspondente na tabela HTML
+    // Buscamos o botão que foi clicado com base no ID passado no onclick
+    const botaoEditar = document.querySelector(`button.editar[onclick="editar(${id})"]`);
+    const linha = botaoEditar.closest("tr");
+
+    // Extrai os textos das colunas (ID está na eq(0), Título na eq(1), Descrição na eq(2))
+    const tituloAtual = linha.cells[1].innerText.trim();
+    const descricaoAtual = linha.cells[2].innerText.trim();
+
+    // 4. Preenche os campos do modal com os dados atuais
+    document.getElementById("title").value = tituloAtual;
+    document.getElementById("description").value = descricaoAtual;
+
+    // 5. Abre o modal
+    modal.classList.add("active");
+}
+
+modal.addEventListener("click", (e) => {
+    if(e.target === modal) {
+        fecharModal();
+    }
+});
+
+
+// --- ENVIO DO FORMULÁRIO (CADASTRO / EDIÇÃO) ---
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // 1. Captura o ID do campo oculto
+    const idInput = document.getElementById("todoId");
+    const id = idInput ? idInput.value : "";
+
+    // 2. Monta o objeto com os dados dos inputs
+    const pacoteCadastro = {
+        title: document.getElementById("title").value,
+        description: document.getElementById("description").value
+    };
+
+    // 3. Define dinamicamente a URL e o Método (Se tem ID = PUT, se não = POST)
+    const url = id ? `/Home/Index?id=${id}` : "/Home/Index";
+    const metodo = id ? "PUT" : "POST";
+
+    mensagem.style.color = "blue";
+    mensagem.innerHTML = id ? "Atualizando tarefa..." : "Enviando pacote...";
+
+    try {
+        const response = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(pacoteCadastro)
+        });
+
+        if (response.ok) {
+            mensagem.style.color = "green";
+            mensagem.innerHTML = id ? "Tarefa atualizada com sucesso!" : "Tarefa cadastrada com sucesso!";
+            
+            form.reset();
+            if (idInput) idInput.value = ""; // Garante a limpeza do ID para o próximo uso
+
+            // Recarrega a página após 1 segundo para atualizar a tabela Razor
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            const erro = await response.json().catch(() => ({}));
+            mensagem.style.color = "red";
+            mensagem.innerHTML = erro.message || "Erro ao processar a requisição.";
+        }
+    } catch (err) {
+        console.error(err);
+        mensagem.style.color = "red";
+        mensagem.innerHTML = "Falha na conexão com o servidor.";
+    }
+});
+
+
+
+
+
+// Função de exclusão de tarefa, chamada pelo botão "Excluir" na tabela
+async function excluir(id) {
+    if (confirm("Deseja realmente excluir esta tarefa " + id + "?")) {
+        try {
+            // Faz a chamada para a Controller passando o ID na URL (Query String)
+            const response = await fetch(`/Home/Index?id=${id}`, {
+                method: "DELETE"
+            });
+
+            if (response.ok) {
+                // Recarrega a página para atualizar
+                window.location.reload();
+            } else {
+                // Se a controller devolver um erro em JSON, tentamos ler a mensagem
+                const erro = await response.json().catch(() => ({}));
+                alert(erro.message || "Não foi possível excluir a tarefa.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Falha na conexão com o servidor ao tentar excluir.");
+        }
+    }
+};
+
+
+
+async function UpdateComplete(id) {
+    try {
+        // Faz a chamada para a Controller passando o ID na URL (Query String)
+            const response = await fetch(`/Home/AtualizarStatus?id=${id}`, {
+            method: "PATCH"
+        });
+
+        if (response.ok) {
+            // Recarrega a página para atualizar
+            window.location.reload();
+        } else {
+            // Se a controller devolver um erro em JSON, tentamos ler a mensagem
+            const erro = await response.json().catch(() => ({}));
+            alert(erro.message || "Não foi possível atualizar o status da tarefa.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Falha na conexão com o servidor ao tentar atualizar o status.");
+    }
+};
+
+
+
+</script>
+
+</body>
+</html>

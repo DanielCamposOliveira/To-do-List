@@ -1,0 +1,72 @@
+﻿/* --- Estilos para a Página de Erro 404 --- */
+
+/* Garante que o container ocupe a tela toda caso o template padrão não faça isso */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.not-found-container {
+    height: auto;
+    min-height: 100%;
+    position: relative; /* Necessário para que o posicionamento absoluto do conteúdo funcione corretamente */
+    background-color: #f9f9f9; /* Um fundo sutil claro, combinando com os tons de cinza */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.not-found-content {
+    text-align: center;
+    width: 800px;
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    margin-left: -400px; /* Metade da largura fixa de 800px */
+}
+
+.not-found-title {
+    margin: 0;
+    font-size: 150px;
+    line-height: 150px;
+    font-weight: bold;
+    color: #565656; /* Seu cinza escuro original */
+    letter-spacing: -5px;
+}
+
+.not-found-subtitle {
+    margin-top: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #787878; /* Seu cinza médio original */
+}
+
+.not-found-p {
+    margin-top: 20px;
+    font-size: 20px;
+    color: #1f1f1f; /* Seu texto quase preto original */
+    line-height: 1.5;
+}
+
+/* --- Responsividade (Garante que não quebre em celulares/tablets) --- */
+@media (max-width: 820px) {
+    .not-found-content {
+        width: 90%; /* Deixa de ser fixo em 800px e passa a ocupar 90% da tela */
+        margin-left: 0;
+        left: 55%;
+        transform: translateX(-55%); /* Centraliza dinamicamente em qualquer tamanho de tela */
+        top: 20%;
+    }
+
+    .not-found-title {
+        font-size: 100px;
+        line-height: 100px;
+    }
+
+    .not-found-subtitle {
+        font-size: 24px;
+    }
+
+    .not-found-p {
+        font-size: 16px;
+    }
+}
