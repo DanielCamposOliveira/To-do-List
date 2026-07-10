@@ -400,11 +400,11 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+#Arquivo Global
 appsettings.json
 launchSettings.json
 
 #Front-End
-
 /Front-end/frontend-mvc/wwwroot/lib/
 /Front-end/frontend-mvc/wwwroot/bin/
 /Front-end/frontend-mvc/wwwroot/obj/
